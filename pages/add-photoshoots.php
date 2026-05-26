@@ -1,28 +1,40 @@
 <?php
+require_once __DIR__ . '/../api/db.php';
+
 $uploadMessage = '';
 $uploadSuccess = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photoshoot_image'])) {
-    $targetDir = 'uploads/photoshoots/';
-    
-    if (!file_exists($targetDir)) {
-        mkdir($targetDir, 0777, true);
-    }
-    
-    $fileName = time() . '_' . basename($_FILES['photoshoot_image']['name']);
-    $targetFile = $targetDir . $fileName;
-    $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
-    
-    $check = getimagesize($_FILES['photoshoot_image']['tmp_name']);
-    if ($check !== false) {
-        if (move_uploaded_file($_FILES['photoshoot_image']['tmp_name'], $targetFile)) {
+    try {
+        $pdo = db();
+        $targetDir = __DIR__ . '/../uploads/photoshoots/';
+
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = time() . '_' . basename($_FILES['photoshoot_image']['name']);
+        $targetFile = $targetDir . $fileName;
+        $check = getimagesize($_FILES['photoshoot_image']['tmp_name']);
+
+        if ($check !== false && move_uploaded_file($_FILES['photoshoot_image']['tmp_name'], $targetFile)) {
+            $relativePath = 'uploads/photoshoots/' . $fileName;
+            $stmt = $pdo->prepare('INSERT INTO photoshoots (client_name, photoshoot_date, location, description, image_path) VALUES (:client_name, :photoshoot_date, :location, :description, :image_path)');
+            $stmt->execute([
+                ':client_name' => $_POST['client_name'] ?? '',
+                ':photoshoot_date' => $_POST['photoshoot_date'] ?? date('Y-m-d'),
+                ':location' => $_POST['location'] ?? '',
+                ':description' => $_POST['description'] ?? null,
+                ':image_path' => $relativePath,
+            ]);
+
             $uploadMessage = 'Photoshoot image uploaded successfully!';
             $uploadSuccess = true;
         } else {
             $uploadMessage = 'Sorry, there was an error uploading your file.';
         }
-    } else {
-        $uploadMessage = 'File is not an image.';
+    } catch (Throwable $exception) {
+        $uploadMessage = 'Database connection failed. Check your API config and schema.';
     }
 }
 ?>

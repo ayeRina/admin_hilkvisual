@@ -1,43 +1,33 @@
 <?php
-$bookings = [
-    [
-        'id' => 1,
-        'client_name' => 'John Doe',
-        'date' => '2026-06-15',
-        'time' => '10:00 AM',
-        'services' => ['Wedding Photography', 'Videography'],
-        'status' => 'pending'
-    ],
-    [
-        'id' => 2,
-        'client_name' => 'Jane Smith',
-        'date' => '2026-06-20',
-        'time' => '2:00 PM',
-        'services' => ['Portrait Session', 'Photo Editing'],
-        'status' => 'pending'
-    ],
-    [
-        'id' => 3,
-        'client_name' => 'Mike Johnson',
-        'date' => '2026-06-10',
-        'time' => '11:00 AM',
-        'services' => ['Event Coverage'],
-        'status' => 'confirmed'
-    ],
-    [
-        'id' => 4,
-        'client_name' => 'Sarah Williams',
-        'date' => '2026-06-25',
-        'time' => '3:00 PM',
-        'services' => ['Family Photoshoot', 'Print Packages'],
-        'status' => 'pending'
-    ]
-];
+require_once __DIR__ . '/../api/db.php';
 
 $confirmMessage = '';
-if (isset($_GET['confirm_id'])) {
-    $confirmId = $_GET['confirm_id'];
-    $confirmMessage = "Booking #$confirmId has been confirmed!";
+
+try {
+    $pdo = db();
+
+    if (isset($_GET['confirm_id'])) {
+        $confirmId = (int) $_GET['confirm_id'];
+        $stmt = $pdo->prepare('UPDATE bookings SET status = "confirmed" WHERE id = :id');
+        $stmt->execute([':id' => $confirmId]);
+        $confirmMessage = "Booking #$confirmId has been confirmed!";
+    }
+
+    $bookings = $pdo->query('
+        SELECT
+            b.id,
+            b.client_name,
+            b.booking_date,
+            b.booking_time,
+            b.status,
+            GROUP_CONCAT(bs.service_name ORDER BY bs.service_name SEPARATOR ", ") AS services
+        FROM bookings b
+        LEFT JOIN booking_services bs ON bs.booking_id = b.id
+        GROUP BY b.id, b.client_name, b.booking_date, b.booking_time, b.status, b.created_at
+        ORDER BY b.created_at DESC
+    ')->fetchAll();
+} catch (Throwable $exception) {
+    $bookings = [];
 }
 ?>
 <div class="header">
@@ -68,17 +58,18 @@ if (isset($_GET['confirm_id'])) {
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 15px; color: #2c3e50; font-weight: 500;">
                             <i class="fas fa-user" style="margin-right: 10px; color: #d4af37;"></i>
-                            <?php echo $booking['client_name']; ?>
+                            <?php echo htmlspecialchars($booking['client_name']); ?>
                         </td>
                         <td style="padding: 15px; color: #666;">
                             <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #d4af37;"></i>
-                            <?php echo date('F j, Y', strtotime($booking['date'])); ?><br>
-                            <small><i class="fas fa-clock" style="margin-right: 5px;"></i><?php echo $booking['time']; ?></small>
+                            <?php echo date('F j, Y', strtotime($booking['booking_date'])); ?><br>
+                            <small><i class="fas fa-clock" style="margin-right: 5px;"></i><?php echo htmlspecialchars($booking['booking_time']); ?></small>
                         </td>
                         <td style="padding: 15px; color: #666;">
-                            <?php foreach ($booking['services'] as $service): ?>
+                            <?php $services = !empty($booking['services']) ? explode(', ', $booking['services']) : []; ?>
+                            <?php foreach ($services as $service): ?>
                                 <span style="display: inline-block; background: #f8f4e8; color: #d4af37; padding: 5px 12px; border-radius: 20px; margin: 3px; font-size: 13px; font-weight: 500;">
-                                    <i class="fas fa-check" style="margin-right: 5px;"></i><?php echo $service; ?>
+                                    <i class="fas fa-check" style="margin-right: 5px;"></i><?php echo htmlspecialchars($service); ?>
                                 </span>
                             <?php endforeach; ?>
                         </td>
@@ -106,6 +97,9 @@ if (isset($_GET['confirm_id'])) {
                         </td>
                     </tr>
                 <?php endforeach; ?>
+                <?php if (empty($bookings)): ?>
+                    <tr><td colspan="5" style="padding: 20px; color: #888; font-style: italic;">No bookings found yet.</td></tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
