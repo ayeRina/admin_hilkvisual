@@ -327,7 +327,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <ul>
                 <li><a href="index.php?page=dashboard" class="<?php echo $current_page === 'dashboard' ? 'active' : ''; ?>"><i class="fas fa-tachometer-alt" style="margin-right: 12px;"></i>DASHBOARD</a></li>
                 <li><a href="index.php?page=clients" class="<?php echo $current_page === 'clients' ? 'active' : ''; ?>"><i class="fas fa-users" style="margin-right: 12px;"></i>CLIENTS</a></li>
-                <li><a href="index.php?page=add-photoshoots" class="<?php echo $current_page === 'add-photoshoots' ? 'active' : ''; ?>"><i class="fas fa-camera" style="margin-right: 12px;"></i>ADD PHOTOSHOOTS</a></li>
+                <li><a href="index.php?page=photoshoots" class="<?php echo $current_page === 'photoshoots' ? 'active' : ''; ?>"><i class="fas fa-camera" style="margin-right: 12px;"></i>PHOTOSHOOTS</a></li>
                 <li><a href="index.php?page=add-file" class="<?php echo $current_page === 'add-file' ? 'active' : ''; ?>"><i class="fas fa-file-upload" style="margin-right: 12px;"></i>ADD FILE</a></li>
                 <li><a href="index.php?page=reports" class="<?php echo $current_page === 'reports' ? 'active' : ''; ?>"><i class="fas fa-chart-bar" style="margin-right: 12px;"></i>REPORTS</a></li>
             </ul>
@@ -344,8 +344,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             case 'clients':
                 include 'pages/clients.php';
                 break;
-            case 'add-photoshoots':
-                include 'pages/add-photoshoots.php';
+            case 'photoshoots':
+                include 'pages/photoshoots.php';
                 break;
             case 'add-file':
                 include 'pages/add-file.php';
